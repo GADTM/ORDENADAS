@@ -1,32 +1,34 @@
-const cloudinary = require('cloudinary').v2;
+const axios = require("axios");
 
-cloudinary.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-  api_key: process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_API_SECRET
-});
-
-exports.handler = async (event) => {
-  const callSign = event.queryStringParameters.callSign;
+exports.handler = async function (event, context) {
+  const { callSign } = event.queryStringParameters;
 
   if (!callSign) {
-    return {
-      statusCode: 400,
-      body: JSON.stringify({ error: "Indicativo no proporcionado" })
-    };
+    return { statusCode: 400, body: "Falta el indicativo" };
   }
 
-  try {
-    const result = await cloudinary.search
-      .expression(`folder:${callSign}`)  // 👈 corregido
-      .sort_by('created_at', 'desc') // 👈 ordenar por fecha de creación, descendente
-      .max_results(30)
-      .execute();
+  const folder = `qsl/${callSign}`;
+  const cloudName = "dgv9hbtxd";
+  const apiKey = process.env."148792123799721"; //"apiKey"
+  const apiSecret = process.env."jYf3wFaZjAhp1UUWGIidSb27ByE"; //"apiSecret"
+  // const apiKey = "148792123799721"; //"apiKey"
+  //const apiSecret = "jYf3wFaZjAhp1UUWGIidSb27ByE"; //"apiSecret"
 
-    const images = result.resources.map(img => ({
+  const url = `https://api.cloudinary.com/v1_1/${cloudName}/resources/image`;
+
+  try {
+    const res = await axios.get(url, {
+      auth: { username: apiKey, password: apiSecret },
+      params: {
+        prefix: folder,
+        max_results: 100
+      }
+    });
+
+    const images = res.data.resources.map(img => ({
       url: img.secure_url,
       public_id: img.public_id,
-      created_at: img.created_at // 👈 opcional, para verificar orden
+      format: img.format
     }));
 
     return {
@@ -34,13 +36,11 @@ exports.handler = async (event) => {
       body: JSON.stringify(images)
     };
 
- } catch (error) {
-  console.error("Error al buscar imágenes:", error);
-  return {
-    statusCode: 500,
-    body: JSON.stringify({ 
-      error: "Error interno al buscar imágenes",
-      details: error.message || error.toString()
-    })
-  };
-}
+  } catch (error) {
+    console.error("Error desde Cloudinary:", error.message);
+    return {
+      statusCode: 500,
+      body: "Error al consultar imágenes"
+    };
+  }
+};
