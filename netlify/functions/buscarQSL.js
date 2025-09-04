@@ -18,7 +18,7 @@ exports.handler = async (event) => {
 
   try {
     const result = await cloudinary.search
-      .expression(`folder=${callSign}`)
+      .expression(`folder:${callSign}`)  // 👈 corregido
       .sort_by('created_at', 'desc') // 👈 ordenar por fecha de creación, descendente
       .max_results(30)
       .execute();
@@ -34,11 +34,13 @@ exports.handler = async (event) => {
       body: JSON.stringify(images)
     };
 
-  } catch (error) {
-    console.error("Error al buscar imágenes:", error);
-    return {
-      statusCode: 500,
-      body: JSON.stringify({ error: "Error interno al buscar imágenes" })
-    };
-  }
-};
+ } catch (error) {
+  console.error("Error al buscar imágenes:", error);
+  return {
+    statusCode: 500,
+    body: JSON.stringify({ 
+      error: "Error interno al buscar imágenes",
+      details: error.message || error.toString()
+    })
+  };
+}
