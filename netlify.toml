@@ -1,3 +1,8 @@
-
 [functions]
   directory = "netlify/functions"
+  node_bundler = "esbuild"
+
+[functions."*"]
+  external_node_modules = ["axios", "cloudinary"]
+  included_files = ["src/functions/**"]
+ 
